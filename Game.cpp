@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+
+
 Game::Game()
 {
 	this->initVariables();
@@ -85,10 +87,11 @@ void Game::initVariables()
 
 void Game::initWindow()
 {
-	this->videoMode.height = tileSize * 8 + margin.y * 2;
-	this->videoMode.width = tileSize * 8 + margin.x * 2;
+	// developed on a 2880x1800 screen
+	this->videoMode.height = (tileSize * 8 + margin.y * 2) * (static_cast<float>(sf::VideoMode::getDesktopMode().width) / 2880.f);
+	this->videoMode.width = (tileSize * 8 + margin.x * 2) * (static_cast<float>(sf::VideoMode::getDesktopMode().height) / 1800.f);
 
-	this->window = new sf::RenderWindow(this->videoMode, "Chess", sf::Style::Titlebar | sf::Style::Close);
+	this->window = new sf::RenderWindow(this->videoMode, "Chess");
 	window->setFramerateLimit(10);
 }
 
@@ -107,11 +110,11 @@ void Game::initUI()
 	turnText.setCharacterSize(36);
 	turnText.setFillColor(sf::Color::White);
 	turnText.setString("Whites' turn");
-	turnText.setOrigin(turnText.getGlobalBounds().width / 2.f, turnText.getGlobalBounds().height);
-	turnText.setPosition(this->window->getDefaultView().getSize().x / 2.f, 25.f);
+	turnText.setOrigin(turnText.getGlobalBounds().width / 2.f, turnText.getGlobalBounds().height / 2.f);
+	turnText.setPosition(boardSize.x / 2.f, -margin.y / 2.f - turnText.getGlobalBounds().height / 2.f);
 
 	// Overlay
-	this->overlay.setSize(this->window->getDefaultView().getSize());
+	this->overlay.setSize(boardSize);
 	this->overlay.setFillColor(sf::Color(0, 0, 0, 150));
 
 	// Checkmate screen
@@ -120,21 +123,21 @@ void Game::initUI()
 	this->checkmateText.setFillColor(sf::Color::White);
 	this->checkmateText.setString("CHECKMATE!");
 	this->checkmateText.setOrigin(this->checkmateText.getGlobalBounds().width / 2.f, this->checkmateText.getGlobalBounds().height);
-	this->checkmateText.setPosition(this->window->getDefaultView().getSize().x / 2.f, this->window->getDefaultView().getSize().y / 2.f - 100.f);
+	this->checkmateText.setPosition(boardSize.x / 2.f, boardSize.y / 2.f - 100.f);
 	
 	this->winnerText.setFont(this->font);
 	this->winnerText.setCharacterSize(64);
 	this->winnerText.setFillColor(sf::Color::White);
 	this->winnerText.setString("whites win");
 	this->winnerText.setOrigin(this->winnerText.getGlobalBounds().width / 2.f, this->winnerText.getGlobalBounds().height);
-	this->winnerText.setPosition(this->window->getDefaultView().getSize().x / 2.f, this->window->getDefaultView().getSize().y / 2.f - 10.f);
+	this->winnerText.setPosition(boardSize.x / 2.f, boardSize.y / 2.f - 10.f);
 
 	this->tooltipText.setFont(this->font);
 	this->tooltipText.setCharacterSize(48);
 	this->tooltipText.setFillColor(sf::Color::White);
 	this->tooltipText.setString("[esc] to quit\t[r] to restart");
 	this->tooltipText.setOrigin(this->tooltipText.getGlobalBounds().width / 2.f, 0.f);
-	this->tooltipText.setPosition(this->window->getDefaultView().getSize().x / 2.f, this->window->getDefaultView().getSize().y / 2.f + 40.f);
+	this->tooltipText.setPosition(boardSize.x / 2.f, boardSize.y / 2.f + 40.f);
 
 	// cursor
 	cursor.setSize(sf::Vector2f(tileSizef, tileSizef));
@@ -217,7 +220,7 @@ void Game::initBoard()
 				board[i][j] = new Rook(color, textures["pieces"], tileSizef);
 				break;
 			case 6:
-				board[i][j] = new Pawn(color, textures["pieces"], tileSizef);
+				board[i][j] = new Pawn(color, textures["pieces"], tileSizef);;
 				break;
 			}
 
@@ -238,6 +241,9 @@ void Game::pollEvents()
 		switch (this->ev.type) {
 		case sf::Event::Closed:
 			this->window->close();
+			break;
+		case sf::Event::Resized:
+			boardView = getLetterboxView(boardView, ev.size.width, ev.size.height);
 			break;
 		case sf::Event::KeyPressed:
 			switch (this->ev.key.code) {
@@ -428,7 +434,8 @@ void Game::update()
 
 void Game::render()
 {
-	window->clear(sf::Color(25, 25, 25, 1)); // Clear previous frame
+	//window->clear(sf::Color(25, 25, 25, 1)); // Clear previous frame
+	window->clear(sf::Color::Black); // Clear previous frame
 
 	window->setView(boardView);
 
@@ -457,7 +464,7 @@ void Game::render()
 
 	window->draw(cursor);
 
-	window->setView(window->getDefaultView());
+	// window->setView(window->getDefaultView());
 
 	renderText();
 
@@ -505,4 +512,43 @@ void Game::renderChecks() {
 		tile.setPosition(blackKing->getPosition());
 		window->draw(tile);
 	}
+}
+
+/*
+	UTILS
+*/
+
+sf::View getLetterboxView(sf::View view, int windowWidth, int windowHeight) {
+
+	// Compares the aspect ratio of the window to the aspect ratio of the view,
+	// and sets the view's viewport accordingly in order to archieve a letterbox effect.
+	// A new view (with a new viewport set) is returned.
+
+	float windowRatio = windowWidth / (float)windowHeight;
+	float viewRatio = view.getSize().x / (float)view.getSize().y;
+	float sizeX = 1;
+	float sizeY = 1;
+	float posX = 0;
+	float posY = 0;
+
+	bool horizontalSpacing = true;
+	if (windowRatio < viewRatio)
+		horizontalSpacing = false;
+
+	// If horizontalSpacing is true, the black bars will appear on the left and right side.
+	// Otherwise, the black bars will appear on the top and bottom.
+
+	if (horizontalSpacing) {
+		sizeX = viewRatio / windowRatio;
+		posX = (1 - sizeX) / 2.f;
+	}
+
+	else {
+		sizeY = windowRatio / viewRatio;
+		posY = (1 - sizeY) / 2.f;
+	}
+
+	view.setViewport(sf::FloatRect(posX, posY, sizeX, sizeY));
+
+	return view;
 }

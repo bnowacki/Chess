@@ -6,8 +6,9 @@ PieceColor oppositeColor(PieceColor color) {
 	return color == PieceColor::WHITE ? PieceColor::BLACK : PieceColor::WHITE;
 }
 
-
-// Piece
+/*
+	PIECE - base class
+*/
 
 Piece::Piece(PieceColor color, float size) : color{ color }, size{ size } {
 	this->setScale(sf::Vector2f(size / spriteSize, size / spriteSize));
@@ -80,7 +81,9 @@ void King::moveToTile(sf::Vector2i move) {
 	this->tile = move;
 }
 
-// Queen
+/*
+	QUEEN
+*/
 
 Queen::Queen(PieceColor color, sf::Texture* texture, float size) : Piece(color, size) {
 	this->type = PieceType::QUEEN;
@@ -116,6 +119,7 @@ void Queen::moveToTile(sf::Vector2i move) {
 	this->setPosition(sf::Vector2f(size * move.x, size * move.y));
 	this->tile = move;
 }
+
 /*
 	BISHOP
 */
@@ -170,7 +174,9 @@ void Bishop::moveToTile(sf::Vector2i move) {
 	this->tile = move;
 }
 
-// Knight
+/*
+	KNIGHT
+*/
 
 Knight::Knight(PieceColor color, sf::Texture* texture, float size) : Piece(color, size) {
 	this->type = PieceType::KNIGHT;
@@ -213,6 +219,7 @@ void Knight::moveToTile(sf::Vector2i move) {
 	this->setPosition(sf::Vector2f(size * move.x, size * move.y));
 	this->tile = move;
 }
+
 /*
 	ROOK
 */
@@ -267,7 +274,9 @@ void Rook::moveToTile(sf::Vector2i move) {
 	this->tile = move;
 }
 
-// Pawn
+/*
+	PAWN
+*/
 
 Pawn::Pawn(PieceColor color, sf::Texture* texture, float size) : Piece(color, size) {
 	this->type = PieceType::PAWN;

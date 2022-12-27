@@ -100,3 +100,5 @@ public:
 	void render();
 };
 
+// utils
+sf::View getLetterboxView(sf::View view, int windowWidth, int windowHeight);
